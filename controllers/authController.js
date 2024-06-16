@@ -1,5 +1,6 @@
 const User = require("../models/users");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const test = (req, res) => {
   res.json("test is working");
@@ -35,12 +36,10 @@ const registerUser = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password,
     });
     return res.status(201).json(user);
   } catch (error) {
@@ -51,4 +50,54 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { test, registerUser };
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        error: "No user found",
+      });
+    }
+    const matchPassword = await bcrypt.compare(password, user.password);
+
+    if (!matchPassword) {
+      return res.status(400).json({
+        error: "Password incorrect",
+      });
+    } else {
+      jwt.sign(
+        { email: user.email, id: user._id, name: user.name },
+        process.env.JWT_SECRET,
+        { expiresIn: "24h" },
+        (err, token) => {
+          if (err) throw err;
+          res.cookie("token", token).json(user);
+        }
+      );
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getProfile = (req, res) => {
+  const { token } = req.cookies;
+  if (token) {
+    jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
+      if (err) throw err;
+      res.json(user);
+    });
+  }
+};
+
+module.exports = { test, registerUser, loginUser, getProfile };
