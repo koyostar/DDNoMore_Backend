@@ -1,5 +1,5 @@
-const Task = require("./models/tasks");
-const User = require("./models/users");
+const Task = require("./../models/tasks");
+const User = require("./../models/users");
 
 async function startTimer(req, res) {
   const taskId = req.params.id;
