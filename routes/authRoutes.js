@@ -5,6 +5,7 @@ const {
   registerUser,
   loginUser,
   getProfile,
+  logoutUser,
 } = require("../controllers/authController");
 
 router.get("/", test);
