@@ -8,12 +8,18 @@ const test = (req, res) => {
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, username, email, password } = req.body;
     if (!name) {
       return res.status(400).json({
         error: "Name is required",
       });
     }
+    if (!username) {
+      return res.status(400).json({
+        error: "Username is required",
+      });
+    }
+
     if (!password) {
       return res.status(400).json({
         error: "Password is required",
@@ -29,18 +35,20 @@ const registerUser = async (req, res) => {
         error: "Email is required",
       });
     }
-    const exist = await User.findOne({ email });
-    if (exist) {
+    const usernameExist = await User.findOne({ username });
+    if (usernameExist) {
       return res.status(400).json({
-        error: "Email is taken already",
+        error: "Username is taken already",
       });
     }
 
     const user = await User.create({
       name,
+      username,
       email,
       password,
     });
+
     return res.status(201).json(user);
   } catch (error) {
     console.error(error);
@@ -52,15 +60,15 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ error: "Username and password are required" });
     }
-    if (!password) {
-      return res.status(400).json({ error: "Password is required" });
-    }
-    const user = await User.findOne({ email });
+
+    const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(400).json({
@@ -75,12 +83,22 @@ const loginUser = async (req, res) => {
       });
     } else {
       jwt.sign(
-        { email: user.email, id: user._id, name: user.name },
+        {
+          email: user.email,
+          id: user._id,
+          name: user.name,
+          username: user.username,
+        },
         process.env.JWT_SECRET,
         { expiresIn: "24h" },
         (err, token) => {
-          if (err) throw err;
-          res.cookie("token", token).json(user);
+          if (err) {
+            console.error("JWT signing error:", err);
+            return res.status(500).json({ error: "Failed to authenticate" });
+          }
+          res
+            .cookie("token", token, { httpOnly: true, secure: true })
+            .json(user);
         }
       );
     }
@@ -92,12 +110,23 @@ const loginUser = async (req, res) => {
 
 const getProfile = (req, res) => {
   const { token } = req.cookies;
-  if (token) {
-    jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
-      if (err) throw err;
-      res.json(user);
-    });
+
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      console.error("JWT verification error:", err);
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    res.json(user);
+  });
 };
 
-module.exports = { test, registerUser, loginUser, getProfile };
+const logoutUser = async (req, res) => {
+  res.clearCookie("token");
+  res.json({ message: "Logged out successfully" });
+};
+
+module.exports = { test, registerUser, loginUser, getProfile, logoutUser };
