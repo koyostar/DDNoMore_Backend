@@ -16,7 +16,7 @@ async function createTask(req, res) {
       description,
       createdBy,
     });
-    console.log("Task created:", task); // Add this log
+    console.log("Task created:", task);
 
     return res
       .status(201)
@@ -29,19 +29,16 @@ async function createTask(req, res) {
 }
 
 async function duplicateTask(req, res) {
-  const taskId = req.params;
+  const { taskId } = req.params;
   const createdBy = req.user._id;
 
   try {
-    const originalTask = await Task.findOne({ taskId: taskId });
+    const originalTask = await Task.findById(taskId);
     const duplicatedTask = await Task.create({
       title: originalTask.title,
       dueDate: originalTask.dueDate,
       priority: originalTask.priority,
       status: originalTask.status,
-      startDate: originalTask.startDate,
-      completedDate: originalTask.completedDate,
-      isArchived: originalTask.isArchived,
       description: originalTask.description,
       createdBy,
     });
@@ -55,16 +52,12 @@ async function duplicateTask(req, res) {
 }
 
 async function editTask(req, res) {
-  const taskId = req.params;
+  const { taskId } = req.params;
   const updates = req.body;
   try {
-    const updatedTask = await Task.findOneAndUpdate(
-      { taskId: taskId },
-      updates,
-      {
-        new: true,
-      }
-    );
+    const updatedTask = await Task.findByIdAndUpdate(taskId, updates, {
+      new: true,
+    });
 
     return res
       .status(200)
@@ -75,9 +68,9 @@ async function editTask(req, res) {
 }
 
 async function deleteTask(req, res) {
-  const taskId = req.params;
+  const { taskId } = req.params;
   try {
-    const deletedTask = await Task.deleteOne({ taskId: taskId });
+    const deletedTask = await Task.deleteOne(taskId);
     if (!deletedTask) {
       return res.status(404).json({ error: "Task not found" });
     }
@@ -88,10 +81,10 @@ async function deleteTask(req, res) {
 }
 
 async function archiveTask(req, res) {
-  const taskId = req.params;
+  const { taskId } = req.params;
   try {
-    const task = await Task.findOneAndUpdate(
-      { taskId: taskId },
+    const task = await Task.findByIdAndUpdate(
+      taskId,
       { isArchived: true },
       { new: true }
     );
@@ -103,10 +96,10 @@ async function archiveTask(req, res) {
 }
 
 async function restoreTask(req, res) {
-  const taskId = req.params;
+  const { taskId } = req.params;
   try {
-    const task = await Task.findOneAndUpdate(
-      { taskId: taskId },
+    const task = await Task.findByIdAndUpdate(
+      taskId,
       { isArchived: false },
       { new: true }
     );
@@ -120,11 +113,11 @@ async function restoreTask(req, res) {
 async function getAllTasks(req, res) {
   try {
     const tasks = await Task.find();
-    console.log("All Tasks:", tasks); // Add this log
+    console.log("All Tasks:", tasks);
 
     res.status(200).json(tasks);
   } catch (error) {
-    console.error("Error fetching all tasks:", error); // Add this log
+    console.error("Error fetching all tasks:", error);
 
     res.status(500).json({ error: error.message });
   }
@@ -133,7 +126,7 @@ async function getAllTasks(req, res) {
 async function getTaskById(req, res) {
   const { taskId } = req.params;
   try {
-    const task = await Task.findOne({ taskId: taskId });
+    const task = await Task.findById(taskId);
     res.status(200).json(task);
   } catch (error) {
     res.status(500).json({ error: error.message });
