@@ -1,38 +1,23 @@
 const Task = require("./../models/tasks");
+const User = require("./../models/users");
 
 async function createTask(req, res) {
   try {
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { title, dueDate, priority, status, description } = req.body;
-    const createdBy = req.user._id;
-    const task = await Task.create({
-      title,
-      dueDate,
-      priority,
-      status,
-      description,
-      createdBy,
-    });
-    console.log("Task created:", task);
+    const taskDetails = req.body;
+    const task = await Task.create(taskDetails);
 
     return res
       .status(201)
       .json({ task, message: "Task created successfully." });
   } catch (error) {
-    console.error("Error creating task:", error);
-
     return res.status(500).json({ error: error.message });
   }
 }
 
 async function duplicateTask(req, res) {
-  const { taskId } = req.params;
-  const createdBy = req.user._id;
-
   try {
+    const taskId = req.params.id;
+
     const originalTask = await Task.findById(taskId);
     const duplicatedTask = await Task.create({
       title: originalTask.title,
@@ -40,7 +25,7 @@ async function duplicateTask(req, res) {
       priority: originalTask.priority,
       status: originalTask.status,
       description: originalTask.description,
-      createdBy,
+      createdBy: originalTask.createdBy,
     });
 
     return res
@@ -52,10 +37,11 @@ async function duplicateTask(req, res) {
 }
 
 async function editTask(req, res) {
-  const { taskId } = req.params;
-  const updates = req.body;
   try {
-    const updatedTask = await Task.findByIdAndUpdate(taskId, updates, {
+    const taskId = req.params.id;
+    const taskDetails = req.body;
+
+    const updatedTask = await Task.findByIdAndUpdate(taskId, taskDetails, {
       new: true,
     });
 
@@ -68,9 +54,11 @@ async function editTask(req, res) {
 }
 
 async function deleteTask(req, res) {
-  const { taskId } = req.params;
   try {
-    const deletedTask = await Task.deleteOne(taskId);
+    const taskId = req.params.id;
+
+    const deletedTask = await Task.findByIdAndDelete(taskId);
+
     if (!deletedTask) {
       return res.status(404).json({ error: "Task not found" });
     }
@@ -81,30 +69,32 @@ async function deleteTask(req, res) {
 }
 
 async function archiveTask(req, res) {
-  const { taskId } = req.params;
   try {
-    const task = await Task.findByIdAndUpdate(
+    const taskId = req.params.id;
+
+    const archivedTask = await Task.findByIdAndUpdate(
       taskId,
       { isArchived: true },
       { new: true }
     );
 
-    return res.status(200).json({ task, message: "Task archived." });
+    return res.status(200).json({ archivedTask, message: "Task archived." });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 }
 
 async function restoreTask(req, res) {
-  const { taskId } = req.params;
   try {
-    const task = await Task.findByIdAndUpdate(
+    const taskId = req.params.id;
+
+    const restoredTask = await Task.findByIdAndUpdate(
       taskId,
       { isArchived: false },
       { new: true }
     );
 
-    return res.status(200).json({ task, message: "Task restored." });
+    return res.status(200).json({ restoredTask, message: "Task restored." });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -113,12 +103,26 @@ async function restoreTask(req, res) {
 async function getAllTasks(req, res) {
   try {
     const tasks = await Task.find();
-    console.log("All Tasks:", tasks);
 
     res.status(200).json(tasks);
   } catch (error) {
-    console.error("Error fetching all tasks:", error);
+    res.status(500).json({ error: error.message });
+  }
+}
 
+async function getTasksByUser(req, res) {
+  try {
+    const { username } = req.params;
+    const user = await User.findOne({ username: username });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const tasks = await Task.find({ createdBy: user._id });
+
+    res.status(200).json(tasks);
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 }
@@ -171,6 +175,7 @@ module.exports = {
   archiveTask,
   restoreTask,
   getAllTasks,
+  getTasksByUser,
   getTaskById,
   getTasksByStatus,
   getTasksByPriority,

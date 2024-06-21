@@ -24,14 +24,15 @@ const calculateLoggedTime = (startDate, completedDate, previousLoggedTime) => {
 };
 
 async function startTimer(req, res) {
-  const { taskId } = req.params;
   try {
+    const taskId = req.params.id;
+
     const task = await Task.findByIdAndUpdate(
       taskId,
       {
         startDate: new Date(),
         completedDate: null,
-        status: "in progress",
+        status: "In Progress",
       },
       { new: true }
     );
@@ -45,8 +46,9 @@ async function startTimer(req, res) {
 }
 
 async function pauseTimer(req, res) {
-  const { taskId } = req.params;
   try {
+    const taskId = req.params.id;
+
     const completedDate = new Date();
     const task = await Task.findById(taskId);
 
@@ -60,23 +62,29 @@ async function pauseTimer(req, res) {
       task.loggedTime
     );
 
-    task.completedDate = completedDate;
-    task.loggedTime = loggedTime;
-    task.status = "to-do";
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      {
+        completedDate: completedDate,
+        loggedTime: loggedTime,
+        status: "To Do",
+      },
+      { new: true }
+    );
 
-    await task.save();
-
-    return res
-      .status(200)
-      .json({ task, message: "Taking a break? Don't forget to come back!" });
+    return res.status(200).json({
+      updatedTask,
+      message: "Taking a break? Don't forget to come back!",
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 }
 
 async function endTimer(req, res) {
-  const { taskId } = req.params;
   try {
+    const taskId = req.params.id;
+
     const completedDate = new Date();
     const task = await Task.findById(taskId);
 
@@ -89,16 +97,22 @@ async function endTimer(req, res) {
       completedDate,
       task.loggedTime
     );
-
-    task.completedDate = completedDate;
-    task.loggedTime = loggedTime;
-    task.status = "completed";
-
-    await task.save();
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      {
+        completedDate: completedDate,
+        loggedTime: loggedTime,
+        status: "Completed",
+      },
+      { new: true }
+    );
 
     return res
       .status(200)
-      .json({ task, message: "Congratulations! You've completed the task." });
+      .json({
+        updatedTask,
+        message: "Congratulations! You've completed the task.",
+      });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

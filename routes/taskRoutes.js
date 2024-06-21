@@ -5,12 +5,14 @@ const timerController = require("./../controllers/timerController");
 
 router.post("/tasks/create", taskController.createTask);
 router.delete("/tasks/:id", taskController.deleteTask);
-router.post("/tasks/duplicate/:id", taskController.duplicateTask);
+router.post("/tasks/:id/duplicate", taskController.duplicateTask);
 router.put("/tasks/edit/:id", taskController.editTask);
-router.put("/tasks/archive/:id", taskController.archiveTask);
+router.put("/tasks/:id/archive", taskController.archiveTask);
+router.put("/tasks/:id/restore", taskController.restoreTask);
 
 router.get("/tasks", taskController.getAllTasks);
-router.get("/tasks/:taskId", taskController.getTaskById);
+router.get("/tasks/user/:username", taskController.getTasksByUser);
+router.get("/tasks/id/:taskId", taskController.getTaskById);
 router.get("/tasks/status/:status", taskController.getTasksByStatus);
 router.get("/tasks/priority/:priority", taskController.getTasksByPriority);
 router.get("/tasks/archived/:isArchived", taskController.getTasksByIsArchived);
