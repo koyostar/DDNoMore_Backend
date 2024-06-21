@@ -1,12 +1,38 @@
 const Task = require("./../models/tasks");
 const User = require("./../models/users");
 
+const formatDuration = (ms) => {
+  let totalSeconds = Math.floor(ms / 1000);
+  let hours = Math.floor(totalSeconds / 3600);
+  let minutes = Math.floor((totalSeconds % 3600) / 60);
+  let seconds = totalSeconds % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}:${String(seconds).padStart(2, "0")}`;
+};
+
+const calculateLoggedTime = (startDate, completedDate, previousLoggedTime) => {
+  const durationMs = completedDate - startDate;
+  const previousDurationParts = previousLoggedTime.split(":");
+  const previousDurationMs =
+    +previousDurationParts[0] * 60 * 60 * 1000 +
+    +previousDurationParts[1] * 60 * 1000 +
+    +previousDurationParts[2] * 1000;
+  return formatDuration(durationMs + previousDurationMs);
+};
+
 async function startTimer(req, res) {
-  const taskId = req.params.id;
+  const { taskId } = req.params;
   try {
     const task = await Task.findByIdAndUpdate(
       taskId,
-      { startDate: new Date() },
+      {
+        startDate: new Date(),
+        completedDate: null,
+        status: "in progress",
+      },
       { new: true }
     );
 
@@ -19,13 +45,26 @@ async function startTimer(req, res) {
 }
 
 async function pauseTimer(req, res) {
-  const taskId = req.params.id;
+  const { taskId } = req.params;
   try {
-    const task = await Task.findByIdAndUpdate(
-      taskId,
-      { completedDate: new Date() },
-      { new: true }
+    const completedDate = new Date();
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found." });
+    }
+
+    const loggedTime = calculateLoggedTime(
+      task.startDate,
+      completedDate,
+      task.loggedTime
     );
+
+    task.completedDate = completedDate;
+    task.loggedTime = loggedTime;
+    task.status = "to-do";
+
+    await task.save();
 
     return res
       .status(200)
@@ -36,13 +75,26 @@ async function pauseTimer(req, res) {
 }
 
 async function endTimer(req, res) {
-  const taskId = req.params.id;
+  const { taskId } = req.params;
   try {
-    const task = await Task.findByIdAndUpdate(
-      taskId,
-      { completedDate: new Date(), status: "completed" },
-      { new: true }
+    const completedDate = new Date();
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found." });
+    }
+
+    const loggedTime = calculateLoggedTime(
+      task.startDate,
+      completedDate,
+      task.loggedTime
     );
+
+    task.completedDate = completedDate;
+    task.loggedTime = loggedTime;
+    task.status = "completed";
+
+    await task.save();
 
     return res
       .status(200)

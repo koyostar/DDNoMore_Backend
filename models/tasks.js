@@ -1,29 +1,47 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const AutoIncrement = require("mongoose-sequence")(mongoose);
+
+const formatDuration = (ms) => {
+  let totalSeconds = Math.floor(ms / 1000);
+  let hours = Math.floor(totalSeconds / 3600);
+  let minutes = Math.floor((totalSeconds % 3600) / 60);
+  let seconds = totalSeconds % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}:${String(seconds).padStart(2, "0")}`;
+};
 
 const taskSchema = new Schema(
   {
-    taskId: {
-      type: Number,
-      unique: true,
-    },
     title: { type: String, required: true },
     dueDate: { type: Date, default: new Date(), required: true },
     priority: {
       type: String,
-      default: "normal",
-      enum: ["high", "medium", "normal", "low"],
+      default: "Normal",
+      enum: ["High", "Medium", "Normal", "Low"],
       required: true,
     },
     status: {
       type: String,
-      default: "to-do",
-      enum: ["to-do", "in progress", "completed"],
+      default: "To Do",
+      enum: ["To Do", "In Progress", "Completed"],
       required: true,
     },
-    startDate: { type: Date, default: new Date() },
-    completedDate: { type: Date, default: new Date() },
+    startDate: { type: Date },
+    loggedTime: {
+      type: String,
+      default: "00:00:00",
+      validate: {
+        validator: function (value) {
+          return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/.test(value);
+        },
+        message: (props) =>
+          `${props.value} is not a valid duration format! Use hh:mm:ss format.`,
+      },
+    },
+    completedDate: { type: Date },
     isArchived: { type: Boolean, default: false },
     description: { type: String },
     createdBy: {
@@ -34,8 +52,6 @@ const taskSchema = new Schema(
   },
   { timestamps: true }
 );
-
-taskSchema.plugin(AutoIncrement, { inc_field: "taskId" });
 
 const Task = mongoose.model("Task", taskSchema);
 
