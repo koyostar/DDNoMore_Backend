@@ -8,7 +8,7 @@ const app = express();
 
 const corsOptions = {
   credentials: true,
-  origin: "http://localhost:5173",
+  origin: "https://dd-no-more.vercel.app/",
   allowedHeaders: "Content-Type, Authorization",
   methods: ["GET", "POST", "PUT", "DELETE"],
 };
