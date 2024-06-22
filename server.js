@@ -23,5 +23,6 @@ app.use("/", require("./routes/authRoutes"));
 app.use("/", require("./routes/taskRoutes"));
 app.use("/", require("./routes/taskRoutes"));
 
-const port = 8000;
-app.listen(port, () => console.log(`Server is running on port ${port}`));
+const PORT = process.env.PORT || 8000;
+
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
