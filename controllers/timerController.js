@@ -27,7 +27,13 @@ async function startTimer(req, res) {
   try {
     const taskId = req.params.id;
 
-    const task = await Task.findByIdAndUpdate(
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found." });
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
       taskId,
       {
         startDate: new Date(),
@@ -39,7 +45,7 @@ async function startTimer(req, res) {
 
     return res
       .status(200)
-      .json({ task, message: "You've started working on your task." });
+      .json({ updatedTask, message: "You've started working on your task." });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -107,12 +113,38 @@ async function endTimer(req, res) {
       { new: true }
     );
 
+    return res.status(200).json({
+      updatedTask,
+      message: "Congratulations! You've completed the task.",
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+async function resetTimer(req, res) {
+  try {
+    const taskId = req.params.id;
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found." });
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      {
+        startDate: null,
+        completedDate: null,
+        loggedTime: "00:00:00",
+        status: "To Do",
+      },
+      { new: true }
+    );
+
     return res
       .status(200)
-      .json({
-        updatedTask,
-        message: "Congratulations! You've completed the task.",
-      });
+      .json({ updatedTask, message: "You've reset the timer." });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -122,4 +154,5 @@ module.exports = {
   startTimer,
   pauseTimer,
   endTimer,
+  resetTimer,
 };

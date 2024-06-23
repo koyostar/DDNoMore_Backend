@@ -109,19 +109,7 @@ const loginUser = async (req, res) => {
 };
 
 const getProfile = (req, res) => {
-  const { token } = req.cookies;
-
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      console.error("JWT verification error:", err);
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    res.json(user);
-  });
+  res.json(req.user);
 };
 
 const logoutUser = async (req, res) => {
@@ -129,4 +117,55 @@ const logoutUser = async (req, res) => {
   res.json({ message: "Logged out successfully" });
 };
 
-module.exports = { test, registerUser, loginUser, getProfile, logoutUser };
+const updateProfile = async (req, res) => {
+  try {
+    const { name, username, email } = req.body;
+    const userId = req.user.id;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name, username, email },
+      { new: true }
+    );
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to change password" });
+  }
+};
+
+module.exports = {
+  test,
+  registerUser,
+  loginUser,
+  getProfile,
+  logoutUser,
+  updateProfile,
+  changePassword,
+};

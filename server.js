@@ -6,14 +6,11 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
+const HOST = process.env.HOST_SITE_URL;
 
 const corsOptions = {
   credentials: true,
-  origin: "https://dd-no-more.vercel.app",
+  origin: `${HOST}`,
   allowedHeaders: "Content-Type, Authorization",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 };
