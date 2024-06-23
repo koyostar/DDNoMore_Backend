@@ -6,6 +6,11 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
 const corsOptions = {
   credentials: true,
   origin: "https://dd-no-more.vercel.app",
@@ -21,6 +26,11 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use("/", require("./routes/authRoutes"));
 app.use("/", require("./routes/taskRoutes"));
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
 
 const PORT = process.env.PORT || 8000;
 
