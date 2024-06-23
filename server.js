@@ -10,7 +10,7 @@ const corsOptions = {
   credentials: true,
   origin: "https://dd-no-more.vercel.app",
   allowedHeaders: "Content-Type, Authorization",
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 };
 
 app.use(cors(corsOptions));
@@ -20,7 +20,6 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 
 app.use("/", require("./routes/authRoutes"));
-app.use("/", require("./routes/taskRoutes"));
 app.use("/", require("./routes/taskRoutes"));
 
 const PORT = process.env.PORT || 8000;
