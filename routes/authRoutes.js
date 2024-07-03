@@ -11,7 +11,7 @@ const {
 } = require("../controllers/authController");
 const { authenticate } = require("../middleware/authMiddleware");
 
-router.get("/", test);
+router.get("/");
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
