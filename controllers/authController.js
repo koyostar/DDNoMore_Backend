@@ -115,6 +115,20 @@ const updateProfile = async (req, res) => {
     const { name, username, email } = req.body;
     const userId = req.user.id;
 
+    const usernameExist = await User.findOne({ username });
+    if (usernameExist) {
+      return res.status(400).json({
+        error: "Username is taken already",
+      });
+    }
+
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      return res.status(400).json({
+        error: "Email has been registered.",
+      });
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { name, username, email },
