@@ -97,6 +97,11 @@ const loginUser = async (req, res) => {
 };
 
 const getProfile = (req, res) => {
+  console.log("Fetching profile for:", req.user);
+  if (!req.user) {
+    console.log("No user information available in req.user");
+    return res.status(400).json({ error: "No user information available" });
+  }
   res.json(req.user);
 };
 
