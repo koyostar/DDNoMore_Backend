@@ -66,30 +66,33 @@ const loginUser = async (req, res) => {
       return res.status(400).json({
         error: "Password incorrect",
       });
-    } else {
-      jwt.sign(
-        {
-          email: user.email,
-          id: user._id,
-          name: user.name,
-          username: user.username,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "24h" },
-        (err, token) => {
-          if (err) {
-            console.error("JWT signing error:", err);
-            return res.status(500).json({ error: "Failed to authenticate" });
-          }
-          res
-            .cookie("token", token, { httpOnly: true, secure: true })
-            .json(user);
-        }
-      );
     }
+
+    const token = jwt.sign(
+      {
+        email: user.email,
+        id: user._id,
+        name: user.name,
+        username: user.username,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 24 * 3600000,
+    });
+
+    res.json({
+      message: "Login successful",
+      user: { id: user._id, username: user.username },
+    });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
