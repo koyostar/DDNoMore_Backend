@@ -82,13 +82,18 @@ const loginUser = async (req, res) => {
       path: "/",
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "None",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       maxAge: 24 * 3600000,
     });
 
     res.json({
       message: "Login successful",
-      user: { id: user._id, username: user.username },
+      user: {
+        email: user.email,
+        id: user._id,
+        name: user.name,
+        username: user.username,
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
