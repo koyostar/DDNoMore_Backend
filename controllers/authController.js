@@ -5,36 +5,25 @@ const jwt = require("jsonwebtoken");
 const registerUser = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
-    if (!name) {
-      return res.status(400).json({
-        error: "Name is required",
-      });
-    }
-    if (!username) {
-      return res.status(400).json({
-        error: "Username is required",
-      });
-    }
-
-    if (!password) {
-      return res.status(400).json({
-        error: "Password is required",
-      });
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({ error: "All fields are required" });
     }
     if (password.length < 6) {
       return res.status(400).json({
         error: "Password should be at least 6 characters long",
       });
     }
-    if (!email) {
-      return res.status(400).json({
-        error: "Email is required",
-      });
-    }
     const usernameExist = await User.findOne({ username });
     if (usernameExist) {
       return res.status(400).json({
         error: "Username is taken already",
+      });
+    }
+
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      return res.status(400).json({
+        error: "Email has been registered.",
       });
     }
 
